@@ -1,0 +1,51 @@
+name: Build MammoX macOS App
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  build:
+    runs-on: macos-latest  # Free macOS runner from GitHub
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install py2app PyQt5 opencv-python numpy
+    
+    - name: Create data directories
+      run: |
+        mkdir -p data/coordinates
+        mkdir -p data/masks
+        mkdir -p data/polygons
+    
+    - name: Build macOS app with py2app
+      run: |
+        python setup.py py2app
+    
+    - name: Verify app was created
+      run: |
+        ls -la dist/
+        file dist/MammoX.app
+    
+    - name: Compress app for easy download
+      run: |
+        cd dist
+        zip -r MammoX.app.zip MammoX.app
+    
+    - name: Upload artifact (your .app file!)
+      uses: actions/upload-artifact@v4
+      with:
+        name: MammoX-macOS
+        path: dist/MammoX.app.zip
+        retention-days: 90
